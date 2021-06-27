@@ -95,6 +95,8 @@ function NewAccount(props: NewAccountProps) {
       derivationMode: "Legacy",
       index: ""
     });
+
+    alert("account added !");
   }
 
   return (
