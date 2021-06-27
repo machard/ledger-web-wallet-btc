@@ -49,7 +49,7 @@ function NewAccount(props: NewAccountProps) {
     }
 
     if (form.wallettype === "ledger") {
-      alert("Ledger base derivation not supported yet");
+      return alert("Ledger base derivation not supported yet");
     }
 
     const account = {
