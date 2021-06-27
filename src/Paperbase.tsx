@@ -116,8 +116,9 @@ theme = {
 const styles = createStyles({
   root: {
     display: 'flex',
-    minHeight: '100vh',
+    height: '100%',
     flexDirection: 'column',
+    overflow: "hidden"
   },
 });
 

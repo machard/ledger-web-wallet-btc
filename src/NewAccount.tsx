@@ -35,7 +35,8 @@ export interface NewAccountProps extends WithStyles<typeof styles> {}
 function NewAccount(props: NewAccountProps) {
   const { classes } = props;
   const [form, dispatch] = useReducer((state: any, u: any) => ({...state, ...u}), {
-    wallettype: "bip32"
+    wallettype: "bip32",
+    network: "mainnet"
   })
   
   const onChange = (event: { target: { id: string; value: string; }; }) =>
@@ -44,7 +45,14 @@ function NewAccount(props: NewAccountProps) {
     });
 
   const add = async() => {
-    if (!form.name || !form.path || !form.index || form.index < 0 || !form.wallettype) {
+    if (
+      !form.name ||
+      !form.path ||
+      !form.index ||
+      form.index < 0 ||
+      !form.wallettype ||
+      !form.network
+    ) {
       return;
     }
 
@@ -133,6 +141,25 @@ function NewAccount(props: NewAccountProps) {
         >
           <MenuItem value={"bip32"} selected={"bip32" === form.wallettype}>bip32</MenuItem>
           <MenuItem value={"ledger"} selected={"ledger" === form.wallettype}>ledger</MenuItem>
+        </Select>
+      </FormControl>
+      <FormControl className={classes.formControl}>
+        <InputLabel id="networklabel">Network</InputLabel>
+        <Select
+          labelId="networklabel"
+          id="network"
+          value={form.network}
+          // @ts-ignore
+          onChange={(event: { target: { value: string; }; }) => onChange({
+            target: {
+              id: "network",
+              value: event.target.value
+            }
+          })}
+          displayEmpty
+        >
+          <MenuItem value={"mainnet"} selected={"mainnet" === form.network}>mainnet</MenuItem>
+          <MenuItem value={"pralinelocal"} selected={"pralinelocal" === form.network}>pralinelocal</MenuItem>
         </Select>
       </FormControl>
       <Box m={2} />

@@ -8,7 +8,6 @@ import {
 import Accounts from './Accounts';
 import Send from './Send';
 import Pendings from './Pendings';
-import Settings from './Settings';
 import Header from './Header';
 
 const styles = (theme: Theme) => createStyles({
@@ -16,6 +15,8 @@ const styles = (theme: Theme) => createStyles({
     flex: 1,
     padding: theme.spacing(6, 4),
     background: '#eaeff1',
+    height: "100%",
+    overflowY: "scroll"
   },
 });
 
@@ -23,14 +24,12 @@ const categories = [
   "Accounts",
   "Send",
   "Pendings",
-  "Settings"
 ]
 
 const pagesMap = {
   "Accounts": Accounts,
   "Send": Send,
   "Pendings": Pendings,
-  "Settings": Settings
 }
 
 export interface PaperbaseProps extends WithStyles<typeof styles> {}
