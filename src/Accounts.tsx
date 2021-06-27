@@ -61,6 +61,8 @@ function Accounts(props: AccountsProps) {
                 wallettype: {account.wallettype}
                 <br />
                 index: {account.index}
+                <br />
+                xpub: {account.xpub}
               </Typography>
             </CardContent>
             <CardActions>
