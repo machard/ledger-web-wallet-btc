@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import SyncIcon from '@material-ui/icons/Sync';
 import IconButton from '@material-ui/core/IconButton';
@@ -7,6 +7,7 @@ import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
+import { context } from "./providers/accounts";
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 
 const lightColor = 'rgba(255, 255, 255, 0.7)';
@@ -42,6 +43,7 @@ interface HeaderProps extends WithStyles<typeof styles> {
 
 function Header(props: HeaderProps) {
   const { classes, categories, category, setCategory } = props;
+  const { accounts } = useContext(context);
 
   return (
     <React.Fragment>
@@ -75,9 +77,19 @@ function Header(props: HeaderProps) {
         elevation={0}
       >
         <Tabs value={category} textColor="inherit">
-        {categories.map((category, i) =>
-            <Tab key={i} textColor="inherit" label={category} onClick={() => setCategory(i)} />
-          )}
+        {categories.map((category, i) => {
+          let name = category;
+          if (name === "Accounts") {
+            name += ` (${accounts.length})`
+          }
+
+          return (<Tab
+            key={i}
+            textColor="inherit"
+            label={name}
+            onClick={() => setCategory(i)}
+          />);
+        })}
         </Tabs>
       </AppBar>
     </React.Fragment>

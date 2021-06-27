@@ -7,6 +7,7 @@ import {
   WithStyles,
 } from '@material-ui/core/styles';
 import App from './App';
+import AccountsProvider from "./providers/accounts";
 
 let theme = createMuiTheme({
   palette: {
@@ -127,12 +128,30 @@ export interface PaperbaseProps extends WithStyles<typeof styles> {}
 function Paperbase(props: PaperbaseProps) {
   const { classes } = props;
 
+  const Providers = [
+    {
+      Provider: ThemeProvider,
+      args: { theme }
+    },
+    {
+      Provider: AccountsProvider,
+      args: {}
+    },
+  ].reduce((Provider, provider) => ({ children }) => (
+    Provider({
+      children: [
+        // @ts-ignore
+        provider.Provider({ ...provider.args,  children})
+      ]
+    })
+  ), ({ children }: any) => children);
+
   return (
-    <ThemeProvider theme={theme}>
+    <Providers>
       <div className={classes.root}>
         <App />
       </div>
-    </ThemeProvider>
+    </Providers>
   );
 }
 

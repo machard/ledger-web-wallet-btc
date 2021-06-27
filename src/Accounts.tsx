@@ -1,9 +1,7 @@
-import React, { useEffect, useReducer, useState } from 'react';
+import { useContext } from "react";
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import client from "./client";
-import btc from "./btc";
-import wallets from "./wallets";
-import NewAccount from "./NewAccount";
+import { context, fetchAccounts } from "./providers/accounts";
 import { Button, Card, CardActions, CardContent, Typography } from '@material-ui/core';
 
 const styles = (theme: Theme) =>
@@ -40,18 +38,7 @@ export interface AccountsProps extends WithStyles<typeof styles> {}
 
 function Accounts(props: AccountsProps) {
   const { classes } = props;
-  const [accounts, setAccounts] = useState<any[]>([]);
-
-  const fetchAccounts = async () => {
-    const accounts: any[] = await client.request("accounts", "list", [{ owner: "ledger-web-wallet-btc" }])
-    setAccounts(accounts);
-  }
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  console.log("Accounts accounts", accounts);
+  const { accounts } = useContext(context);
 
   return (
     <div className={classes.root}>
@@ -90,7 +77,6 @@ function Accounts(props: AccountsProps) {
           </Card>
         )}
       </div>
-      <NewAccount fetchAccounts={fetchAccounts} />
     </div>
   );
 }

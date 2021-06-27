@@ -6,6 +6,7 @@ import {
   WithStyles,
 } from '@material-ui/core/styles';
 import Accounts from './Accounts';
+import NewAccount from './NewAccount';
 import Send from './Send';
 import Pendings from './Pendings';
 import Header from './Header';
@@ -21,12 +22,14 @@ const styles = (theme: Theme) => createStyles({
 });
 
 const categories = [
+  "Add Accounts",
   "Accounts",
   "Send",
   "Pendings",
 ]
 
 const pagesMap = {
+  "Add Accounts": NewAccount,
   "Accounts": Accounts,
   "Send": Send,
   "Pendings": Pendings,

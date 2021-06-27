@@ -11,6 +11,7 @@ import { FormControl, MenuItem, Select } from '@material-ui/core';
 import { InputLabel } from '@material-ui/core';
 import btc from "./btc";
 import wallets from "./wallets";
+import { fetchAccounts } from "./providers/accounts";
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -30,12 +31,10 @@ const styles = (theme: Theme) =>
     },
   });
 
-export interface NewAccountProps extends WithStyles<typeof styles> {
-  fetchAccounts: Function
-}
+export interface NewAccountProps extends WithStyles<typeof styles> {}
 
 function NewAccount(props: NewAccountProps) {
-  const { classes, fetchAccounts } = props;
+  const { classes } = props;
   const [form, dispatch] = useReducer((state: any, u: any) => ({...state, ...u}), {
     wallettype: "bip32",
     network: "mainnet"
