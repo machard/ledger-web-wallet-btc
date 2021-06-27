@@ -30,10 +30,12 @@ const styles = (theme: Theme) =>
     },
   });
 
-export interface NewAccountProps extends WithStyles<typeof styles> {}
+export interface NewAccountProps extends WithStyles<typeof styles> {
+  fetchAccounts: Function
+}
 
 function NewAccount(props: NewAccountProps) {
-  const { classes } = props;
+  const { classes, fetchAccounts } = props;
   const [form, dispatch] = useReducer((state: any, u: any) => ({...state, ...u}), {
     wallettype: "bip32",
     network: "mainnet"
@@ -63,7 +65,7 @@ function NewAccount(props: NewAccountProps) {
     const account = {
       ...form,
       // @ts-ignore
-      path: `${form.path}/${form.index}’`,
+      path: form.path,
     }
 
     await client.request("devices", "requireApp", [{
@@ -72,7 +74,7 @@ function NewAccount(props: NewAccountProps) {
 
     let accountDerivation;
     try {
-      accountDerivation = await btc.getWalletPublicKey(account.path);
+      accountDerivation = await btc.getWalletPublicKey(`${form.path}/${form.index}’`);
     } catch(e) {
       return alert(e);
     }
@@ -83,8 +85,11 @@ function NewAccount(props: NewAccountProps) {
     const xpub = wallets[form.wallettype].getXpub(accountDerivation);
 
     account.xpub = xpub;
+    account.owner = "ledger-web-wallet-btc";
 
-    alert(JSON.stringify(account));
+    await client.request("accounts", "addAccount", [account]);
+
+    fetchAccounts();
 
     dispatch({
       name: "",

@@ -13,7 +13,7 @@ import Header from './Header';
 const styles = (theme: Theme) => createStyles({
   main: {
     flex: 1,
-    padding: theme.spacing(6, 4),
+    padding: theme.spacing(3, 3),
     background: '#eaeff1',
     height: "100%",
     overflowY: "scroll"
