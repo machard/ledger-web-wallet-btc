@@ -1,4 +1,4 @@
-import WalletLedger from "./bitcoin/wallets/ledger";
+import WalletLedger from "./ledger";
 
 const wallets = {
   "ledger": new WalletLedger(),
