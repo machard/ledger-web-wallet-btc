@@ -1,7 +1,6 @@
 import { useContext } from "react";
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import client from "./client";
-import { context, fetchAccounts } from "./providers/accounts";
+import { context, removeAccount } from "./providers/accounts";
 import { Button, Card, CardActions, CardContent, Typography } from '@material-ui/core';
 
 const styles = (theme: Theme) =>
@@ -38,12 +37,12 @@ export interface AccountsProps extends WithStyles<typeof styles> {}
 
 function Accounts(props: AccountsProps) {
   const { classes } = props;
-  const { accounts } = useContext(context);
+  const { installedAccounts } = useContext(context);
 
   return (
     <div className={classes.root}>
       <div className={classes.accounts}>
-        {accounts.map((account, i) =>
+        {installedAccounts.map((account, i) =>
           <Card key={i} className={classes.card} variant="outlined">
             <CardContent>
               <Typography className={classes.title} color="textSecondary" gutterBottom>
@@ -62,6 +61,8 @@ function Accounts(props: AccountsProps) {
                 <br />
                 index: {account.index}
                 <br />
+                format: {account.format}
+                <br />
                 xpub: {account.xpub}
               </Typography>
             </CardContent>
@@ -71,8 +72,7 @@ function Accounts(props: AccountsProps) {
                 color="secondary"
                 size="small"
                 onClick={async () => {
-                  await client.request("accounts", "removeAccount", [account]);
-                  fetchAccounts();
+                  removeAccount(account);
                 }}
               >Remove</Button>
             </CardActions>

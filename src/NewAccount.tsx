@@ -7,11 +7,12 @@ import Button from '@material-ui/core/Button';
 import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import client from "./client";
-import { FormControl, MenuItem, Select } from '@material-ui/core';
+import { FormControl, FormHelperText, MenuItem, Select } from '@material-ui/core';
 import { InputLabel } from '@material-ui/core';
 import btc from "./btc";
 import wallets from "./wallets";
-import { fetchAccounts } from "./providers/accounts";
+import networks from "./networks";
+import { addAccount } from "./providers/accounts";
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -36,8 +37,9 @@ export interface NewAccountProps extends WithStyles<typeof styles> {}
 function NewAccount(props: NewAccountProps) {
   const { classes } = props;
   const [form, dispatch] = useReducer((state: any, u: any) => ({...state, ...u}), {
-    wallettype: "bip32",
-    network: "mainnet"
+    wallettype: Object.keys(wallets)[0],
+    network: "mainnet",
+    format: ""
   })
   
   const onChange = (event: { target: { id: string; value: string; }; }) =>
@@ -57,10 +59,6 @@ function NewAccount(props: NewAccountProps) {
       return;
     }
 
-    if (form.wallettype === "ledger") {
-      return alert("Ledger base derivation not supported yet");
-    }
-
     const account = {
       ...form,
       // @ts-ignore
@@ -71,29 +69,29 @@ function NewAccount(props: NewAccountProps) {
       name: "Bitcoin"
     }]);
 
-    let accountDerivation;
+    let xpub;
     try {
-      accountDerivation = await btc.getWalletPublicKey(`${form.path}/${form.index}’`);
+      // @ts-ignore
+      xpub = await wallets[form.wallettype].getXpub(btc, {
+        index: form.index,
+        path: form.path,
+        format: form.format,
+        // @ts-ignore
+        network: networks[form.network]
+      });
     } catch(e) {
       return alert(e);
     }
 
-    console.log("account derivation", accountDerivation);
-    
-    // @ts-ignore
-    const xpub = wallets[form.wallettype].getXpub(accountDerivation);
-
     account.xpub = xpub;
     account.owner = "ledger-web-wallet-btc";
 
-    await client.request("accounts", "addAccount", [account]);
-
-    fetchAccounts();
+    addAccount(account);
 
     dispatch({
       name: "",
-      derivationMode: "Legacy",
-      index: ""
+      index: "",
+      path: "",
     });
 
     alert("account added !");
@@ -145,8 +143,9 @@ function NewAccount(props: NewAccountProps) {
           })}
           displayEmpty
         >
-          <MenuItem value={"bip32"} selected={"bip32" === form.wallettype}>bip32</MenuItem>
-          <MenuItem value={"ledger"} selected={"ledger" === form.wallettype}>ledger</MenuItem>
+          {Object.keys(wallets).map(wallet => (
+            <MenuItem value={wallet} selected={wallet === form.wallettype}>{wallet}</MenuItem>
+          ))}
         </Select>
       </FormControl>
       <FormControl className={classes.formControl}>
@@ -164,9 +163,32 @@ function NewAccount(props: NewAccountProps) {
           })}
           displayEmpty
         >
-          <MenuItem value={"mainnet"} selected={"mainnet" === form.network}>mainnet</MenuItem>
-          <MenuItem value={"pralinelocal"} selected={"pralinelocal" === form.network}>pralinelocal</MenuItem>
+          {Object.keys(networks).map(network => (
+            <MenuItem value={network} selected={network === form.network}>{network}</MenuItem>
+          ))}
         </Select>
+      </FormControl>
+      <FormControl className={classes.formControl}>
+        <InputLabel id="formatlabel">Format</InputLabel>
+        <Select
+          labelId="formatlabel"
+          id="format"
+          value={form.format}
+          // @ts-ignore
+          onChange={(event: { target: { value: string; }; }) => onChange({
+            target: {
+              id: "format",
+              value: event.target.value
+            }
+          })}
+          displayEmpty
+        >
+          <MenuItem value={""} selected={"" === form.format}></MenuItem>
+          <MenuItem value={"p2sh"} selected={"p2sh" === form.format}>p2sh</MenuItem>
+          <MenuItem value={"legacy"} selected={"legacy" === form.format}>legacy</MenuItem>
+          <MenuItem value={"bech32"} selected={"bech32" === form.format}>bech32</MenuItem>
+        </Select>
+        <FormHelperText>Leave blank if unsure</FormHelperText>
       </FormControl>
       <Box m={2} />
       <Button variant="contained" color="primary" onClick={add}>

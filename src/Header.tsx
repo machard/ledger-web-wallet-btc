@@ -43,7 +43,7 @@ interface HeaderProps extends WithStyles<typeof styles> {
 
 function Header(props: HeaderProps) {
   const { classes, categories, category, setCategory } = props;
-  const { accounts } = useContext(context);
+  const { installedAccounts } = useContext(context);
 
   return (
     <React.Fragment>
@@ -80,7 +80,7 @@ function Header(props: HeaderProps) {
         {categories.map((category, i) => {
           let name = category;
           if (name === "Accounts") {
-            name += ` (${accounts.length})`
+            name += ` (${installedAccounts.length})`
           }
 
           return (<Tab

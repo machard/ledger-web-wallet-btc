@@ -1,7 +1,7 @@
-import WalletBip32 from "./bitcoin/wallets/bip32";
+import WalletLedger from "./bitcoin/wallets/ledger";
 
 const wallets = {
-  "bip32": new WalletBip32(),
+  "ledger": new WalletLedger(),
 };
 
 export default wallets;
