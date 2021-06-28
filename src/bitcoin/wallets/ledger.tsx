@@ -71,20 +71,11 @@ class WalletLedger {
   async getXpub(btc: Btc, params: {
       path: string;
       index: string;
-      format: AddressFormat;
       // coininfo network
       network: any
   }) {
-    let opts:  { verify: boolean | undefined; format: AddressFormat | undefined; } | undefined = undefined;
-    if (params.format) {
-      opts = {
-        format: params.format,
-        verify: undefined
-      };
-    }
-
-    const parentDerivation = await btc.getWalletPublicKey(`${params.path}`, opts);
-    const accountDerivation = await btc.getWalletPublicKey(`${params.path}/${params.index}'`, opts);
+    const parentDerivation = await btc.getWalletPublicKey(`${params.path}`);
+    const accountDerivation = await btc.getWalletPublicKey(`${params.path}/${params.index}'`);
     
     // parent
     const publicKeyParentCompressed = compressPublicKey(parentDerivation.publicKey);

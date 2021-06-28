@@ -10,7 +10,7 @@ interface Account {
   network: string;
   wallettype: string;
   owner: string;
-  format: string;
+  derivationMode: string;
   xpub: string;
 }
 
@@ -35,7 +35,7 @@ const reducer = (state: State, update: any) => {
           account.path,
           account.index,
           account.network,
-          account.format,
+          account.derivationMode,
           account.wallettype,
           account.owner
         ].join()
@@ -50,7 +50,7 @@ const reducer = (state: State, update: any) => {
         account.path !== update.account.path ||
         account.index !== update.account.index ||
         account.network !== update.account.network ||
-        account.format !== update.account.format ||
+        account.derivationMode !== update.account.derivationMode ||
         account.wallettype !== update.account.wallettype ||
         account.owner !== update.account.owner
       );

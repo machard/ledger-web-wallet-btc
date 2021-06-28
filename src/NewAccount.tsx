@@ -12,6 +12,7 @@ import { InputLabel } from '@material-ui/core';
 import btc from "./btc";
 import wallets from "./wallets";
 import networks from "./networks";
+import derivationModes from "./derivationModes";
 import { addAccount } from "./providers/accounts";
 
 const styles = (theme: Theme) =>
@@ -39,7 +40,7 @@ function NewAccount(props: NewAccountProps) {
   const [form, dispatch] = useReducer((state: any, u: any) => ({...state, ...u}), {
     wallettype: Object.keys(wallets)[0],
     network: "mainnet",
-    format: ""
+    derivationMode: ""
   })
   
   const onChange = (event: { target: { id: string; value: string; }; }) =>
@@ -59,10 +60,19 @@ function NewAccount(props: NewAccountProps) {
       return;
     }
 
+    let derivationMode = form.derivationMode;
+
+    if (!derivationMode) {
+      const type = form.path.split('/')[0].replace("'", "");
+      // @ts-ignore
+      derivationMode = derivationModes[type];
+    }
+
     const account = {
       ...form,
       // @ts-ignore
       path: form.path,
+      derivationMode,
     }
 
     await client.request("devices", "requireApp", [{
@@ -75,7 +85,6 @@ function NewAccount(props: NewAccountProps) {
       xpub = await wallets[form.wallettype].getXpub(btc, {
         index: form.index,
         path: form.path,
-        format: form.format,
         // @ts-ignore
         network: networks[form.network]
       });
@@ -169,26 +178,26 @@ function NewAccount(props: NewAccountProps) {
         </Select>
       </FormControl>
       <FormControl className={classes.formControl}>
-        <InputLabel id="formatlabel">Format</InputLabel>
+        <InputLabel id="derivationModelabel">Derivation mode to use to derive addresses from xpub</InputLabel>
         <Select
-          labelId="formatlabel"
-          id="format"
-          value={form.format}
+          labelId="derivationModelabel"
+          id="derivationMode"
+          value={form.derivationMode}
           // @ts-ignore
           onChange={(event: { target: { value: string; }; }) => onChange({
             target: {
-              id: "format",
+              id: "derivationMode",
               value: event.target.value
             }
           })}
           displayEmpty
         >
-          <MenuItem value={""} selected={"" === form.format}></MenuItem>
-          <MenuItem value={"p2sh"} selected={"p2sh" === form.format}>p2sh</MenuItem>
-          <MenuItem value={"legacy"} selected={"legacy" === form.format}>legacy</MenuItem>
-          <MenuItem value={"bech32"} selected={"bech32" === form.format}>bech32</MenuItem>
+          <MenuItem value={""} selected={"" === form.derivationMode}></MenuItem>
+          {Object.values(derivationModes).map(derivationMode => (
+            <MenuItem value={derivationMode} selected={derivationMode === form.derivationMode}>{derivationMode}</MenuItem>
+          ))}
         </Select>
-        <FormHelperText>Leave blank if unsure</FormHelperText>
+        <FormHelperText>If you leave blank it will be selected based on the path. Only useful to set it to recover mistakes.</FormHelperText>
       </FormControl>
       <Box m={2} />
       <Button variant="contained" color="primary" onClick={add}>

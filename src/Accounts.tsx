@@ -61,7 +61,7 @@ function Accounts(props: AccountsProps) {
                 <br />
                 index: {account.index}
                 <br />
-                format: {account.format}
+                derivationMode: {account.derivationMode}
                 <br />
                 xpub: {account.xpub}
               </Typography>
