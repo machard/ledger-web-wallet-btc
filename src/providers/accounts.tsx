@@ -7,7 +7,7 @@ import xpubjs from "xpub.js";
 import coininfo from "coininfo";
 import Xpub from "xpub.js/dist/xpub";
 
-interface Account {
+export interface Account {
   name: string;
   path: string;
   index: string;

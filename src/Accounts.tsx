@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { context, removeAccount, syncAccount } from "./providers/accounts";
+import { context, removeAccount, syncAccount, Account } from "./providers/accounts";
 import { Button, Card, CardActions, CardContent, Typography } from '@material-ui/core';
 
 const styles = (theme: Theme) =>
@@ -38,6 +38,11 @@ export interface AccountsProps extends WithStyles<typeof styles> {}
 function Accounts(props: AccountsProps) {
   const { classes } = props;
   const { installedAccounts } = useContext(context);
+
+  const copyNewAddressInClipboard = async (account: Account) => {
+    const address = await account.xpubobj.getNewAddress(0, 1);
+    navigator.clipboard.writeText(address);
+  }
 
   return (
     <div className={classes.root}>
@@ -78,6 +83,13 @@ function Accounts(props: AccountsProps) {
                   syncAccount(account.id);
                 }}
               >Sync{account.syncing ? "ing...": ""}</Button>
+              <Button
+                size="small"
+                disabled={account.syncing}
+                onClick={async () => {
+                  copyNewAddressInClipboard(account);
+                }}
+              >Copy new address in clipboard{account.syncing ? "ing...": ""}</Button>
               <Button
                 color="secondary"
                 size="small"
