@@ -29,42 +29,43 @@ function Accounts(props: AccountsProps) {
       [event.target.id]: event.target.value,
     });
 
-    const send = async() => {
-      if (
-        !form.from ||
-        !form.to ||
-        !form.amount
-      ) {
-        return;
-      }
-      
-      let dest = form.to;
-      if (form.totype === "account") {
-        const account = installedAccounts.find(account => account.id === form.to)
-        dest = await account?.xpubobj.getNewAddress(0, 1);
-      }
+  const fromAccount = installedAccounts.find(account => account.id === form.from);
 
-      const fromAccount = installedAccounts.find(account => account.id === form.from);
-
-      let psbt;
-      try {
-        // @ts-ignore fromAccount is defined
-        psbt = await fromAccount.xpubobj.buildTx(
-          {
-            account: 1,
-            gap: 1,
-          },
-          dest,
-          form.amount,
-          500
-        );
-      } catch(e) {
-        return alert(e);
-      }
-      
-      console.log(psbt);
-      alert("check the tx in logs");
+  const send = async() => {
+    if (
+      !form.from ||
+      !form.to ||
+      !form.amount
+    ) {
+      return;
     }
+    
+    let dest = form.to;
+    if (form.totype === "account") {
+      const account = installedAccounts.find(account => account.id === form.to)
+      dest = await account?.xpubobj.getNewAddress(0, 1);
+    }
+
+    let psbt;
+    try {
+      // @ts-ignore fromAccount is defined
+      psbt = await fromAccount.xpubobj.buildTx(
+        {
+          account: 1,
+          gap: 1,
+        },
+        dest,
+        parseInt(form.amount, 10),
+        500
+      );
+    } catch(e) {
+      throw e;
+      return alert(e);
+    }
+    
+    console.log(psbt);
+    alert("check the tx in logs");
+  }
 
   return (
     <Paper className={classes.paper}>
@@ -98,7 +99,7 @@ function Accounts(props: AccountsProps) {
             .filter(account => account.balance > 0)
             .map(account => (
               <MenuItem value={account.id} selected={account.id === form.from}>
-                {account.name} ({ account.balance } sats)
+                {account.name} ({ account.balance } sats, {account.network})
               </MenuItem>
             ))
           }
@@ -131,9 +132,9 @@ function Accounts(props: AccountsProps) {
           <FormControlLabel value="address" control={<Radio />} label="Address" />
         </RadioGroup>
       </FormControl>
-      {form.totype === "account" ? (
+      {form.totype === "account"  && fromAccount ? (
         <FormControl className={classes.formControl}>
-          <InputLabel id="to-label">Send Destination account</InputLabel>
+          <InputLabel id="to-label">Send Destination account ({fromAccount.network})</InputLabel>
           <Select
             labelId="to-label"
             id="to"
@@ -147,19 +148,20 @@ function Accounts(props: AccountsProps) {
             })}
           >
             {installedAccounts
+              .filter(account => account.network === fromAccount.network)
               .map(account => (
                 <MenuItem value={account.id}>
-                  {account.name} ({ account.balance } sats)
+                  {account.name} ({ account.balance } sats, {account.network})
                 </MenuItem>
               ))
             }
           </Select>
-          <FormHelperText>Shows synced accounts regardless of balance</FormHelperText>
+          <FormHelperText>Shows synced accounts of the same network regardless of balance</FormHelperText>
         </FormControl>
-      ) : form.totype === "address" ? (
+      ) : (form.totype === "address" && fromAccount) ? (
         <TextField
           id="to"
-          label="To Address"
+          label={`To Address (${fromAccount.network} network)`}
           required
           value={form.to || ""}
           onChange={onChange}
