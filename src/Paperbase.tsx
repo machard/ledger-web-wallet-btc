@@ -131,18 +131,19 @@ function Paperbase(props: PaperbaseProps) {
   const Providers = [
     {
       Provider: ThemeProvider,
-      args: { theme }
+      args: { theme, key: "theme" }
     },
     {
       Provider: AccountsProvider,
-      args: {}
+      args: { key: "accounts" }
     },
   ].reduce((Provider, provider) => ({ children }) => (
     Provider({
       children: [
         // @ts-ignore
         provider.Provider({ ...provider.args,  children})
-      ]
+      ],
+      key: "base"
     })
   ), ({ children }: any) => children);
 

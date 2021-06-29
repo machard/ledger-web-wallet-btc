@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { context, removeAccount } from "./providers/accounts";
+import { context, removeAccount, syncAccount } from "./providers/accounts";
 import { Button, Card, CardActions, CardContent, Typography } from '@material-ui/core';
 
 const styles = (theme: Theme) =>
@@ -49,7 +49,9 @@ function Accounts(props: AccountsProps) {
                 {account.name}
               </Typography>
               <Typography variant="h5" component="h2">
-                Balance (soon)
+                {account.balance !== undefined ?
+                  `${account.balance} sats`
+                : "Not synced"}
               </Typography>
               <Typography className={classes.pos} color="textSecondary">
                 path: {account.path}
@@ -64,15 +66,23 @@ function Accounts(props: AccountsProps) {
                 derivationMode: {account.derivationMode}
                 <br />
                 xpub: {account.xpub}
+                <br />
+                lastSync: {account.lastSync}
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">Sync (soon)</Button>
+              <Button
+                size="small"
+                disabled={account.syncing}
+                onClick={async () => {
+                  syncAccount(account.id);
+                }}
+              >Sync{account.syncing ? "ing...": ""}</Button>
               <Button
                 color="secondary"
                 size="small"
                 onClick={async () => {
-                  removeAccount(account);
+                  removeAccount(account.id);
                 }}
               >Remove</Button>
             </CardActions>

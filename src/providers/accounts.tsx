@@ -1,7 +1,11 @@
 /* @flow */
 import React, { ReactNode } from "react";
 import useReducerWithLocalStorage from "../hooks/useReducerWithLocalStorage";
-import { uniqBy, filter } from "lodash";
+import { uniqBy, filter, omit, find } from "lodash";
+import xpubjs from "xpub.js";
+// @ts-ignore
+import coininfo from "coininfo";
+import Xpub from "xpub.js/dist/xpub";
 
 interface Account {
   name: string;
@@ -12,6 +16,11 @@ interface Account {
   owner: string;
   derivationMode: string;
   xpub: string;
+  id: string;
+  xpubobj: Xpub;
+  syncing: boolean;
+  balance: number;
+  lastSync: string;
 }
 
 interface State {
@@ -19,9 +28,48 @@ interface State {
 };
 
 // actions/methods
-export let removeAccount: (account: Account) => void = () => {};
+export let removeAccount: (id: string) => void = () => {};
 export let addAccount: (account: Account) => void = () => {};
+export let syncAccount: (id: string) => void = () => {};
 export let list: (_filter: any) => Account[] = () => [];
+
+const getxpubobj = (account: any) => {
+  let network = coininfo.bitcoin.main.toBitcoinJS();
+  let explorer = new xpubjs.explorers.LedgerV3Dot2Dot4({
+    explorerURI: "https://explorers.api.vault.ledger.com/blockchain/v3/btc",
+  });
+
+  if (account.network === "praline") {
+    network = coininfo.bitcoin.test.toBitcoinJS();
+    explorer = new xpubjs.explorers.LedgerV3Dot2Dot4({
+      explorerURI: "http://localhost:20000/blockchain/v3",
+      disableBatchSize: true, // https://ledgerhq.atlassian.net/browse/BACK-2191
+    });
+  }
+
+  const crypto = new xpubjs.crypto.Bitcoin({
+    network,
+  });
+
+  return new xpubjs.Xpub({
+    storage: new xpubjs.storages.Mock(),
+    explorer,
+    crypto,
+    xpub: account.xpub,
+    derivationMode: account.derivationMode,
+  })
+}
+
+const makeId = (account: any) => {
+  return [
+    account.path,
+    account.index,
+    account.network,
+    account.derivationMode,
+    account.wallettype,
+    account.owner
+  ].join("-")
+}
 
 // reducer
 const reducer = (state: State, update: any) => {
@@ -30,15 +78,12 @@ const reducer = (state: State, update: any) => {
   switch(update.type) {
     case "addAccount":
       installedAccounts = uniqBy(
-        state.installedAccounts.concat([update.account]),
-        (account) => [
-          account.path,
-          account.index,
-          account.network,
-          account.derivationMode,
-          account.wallettype,
-          account.owner
-        ].join()
+        state.installedAccounts.concat([{
+          ...update.account,
+          xpubobj: getxpubobj(update.account),
+          id: makeId(update.account)
+        }]),
+        "id"
       );
       state = {
         ...state,
@@ -46,18 +91,40 @@ const reducer = (state: State, update: any) => {
       };
       break
     case "removeAccount":
-      installedAccounts = state.installedAccounts.filter(account =>
-        account.path !== update.account.path ||
-        account.index !== update.account.index ||
-        account.network !== update.account.network ||
-        account.derivationMode !== update.account.derivationMode ||
-        account.wallettype !== update.account.wallettype ||
-        account.owner !== update.account.owner
-      );
+      installedAccounts = state.installedAccounts.filter(account => account.id !== update.id);
 
       state = {
         ...state,
         installedAccounts,
+      };
+      break
+    case "syncing":
+      // better to use something like immutable.js
+      state = {
+        ...state,
+        installedAccounts: state.installedAccounts.map(account => {
+          if (account.id !== update.id) {
+            return account;
+          }
+          if (update.value) {
+            return {
+              ...account,
+              syncing: true
+            }
+          }
+          if (update.fail) {
+            return {
+              ...account,
+              syncing: false
+            }
+          }
+          return {
+            ...account,
+            syncing: false,
+            balance: update.balance,
+            lastSync: new Date().toISOString()
+          }
+        }),
       };
       break
   }
@@ -69,21 +136,86 @@ const initialState: State = {
 
 export const context = React.createContext<State>(initialState);
 
+const txskey = (id: string) => `account.${id}.txs`;
+
 const AccountsProvider = ({
   children,
 }: {
   children: ReactNode,
 }) => {
-  const [state, dispatch] = useReducerWithLocalStorage("accounts", reducer, initialState);
+  const [state, dispatch] = useReducerWithLocalStorage(
+    "accounts3",
+    reducer,
+    initialState,
+    {
+      onsave: (state: State) => {
+        return {
+          ...state,
+          installedAccounts: state.installedAccounts.map(account =>
+            omit(account, "xpubobj")
+          ),
+        }
+      },
+      onload: (data: any) => {
+        return {
+          ...data,
+          installedAccounts: data.installedAccounts.map((account: any) => {
+            const xpubobj = getxpubobj(account);
+            
+            try {
+              const txs = localStorage.getItem(txskey(account.id)) || "[]";
+              xpubobj.storage.load(JSON.parse(txs));
+            } catch(e) {}
+            
+            return ({
+              ...account,
+              xpubobj
+            })
+          }),
+        }
+      }
+    }
+  );
 
-  removeAccount = (account: Account) => dispatch({
-    type: "removeAccount",
-    account,
-  });;
-  addAccount = (account: Account) => dispatch({
-    type: "addAccount",
-    account,
-  });
+  syncAccount = async (id: string ) => {
+    const account: Account = find(state.installedAccounts, account => account.id === id);
+    dispatch({
+      type: "syncing",
+      value: true,
+      id,
+    });
+    let fail, balance;
+    try {
+      await account.xpubobj.sync();
+      balance = await account.xpubobj.getXpubBalance();
+      const txs = await account.xpubobj.storage.export();
+      localStorage.setItem(txskey(account.id), JSON.stringify(txs));
+    } catch(e) {
+      console.log("sync fail", id, e);
+      fail = true;
+    }
+    dispatch({
+      type: "syncing",
+      value: false,
+      id,
+      balance,
+      fail
+    });
+  }
+
+  removeAccount = (id: string) => {
+    dispatch({
+      type: "removeAccount",
+      id,
+    });
+    localStorage.removeItem(txskey(id))
+  }
+  addAccount = (account: any) => {
+    dispatch({
+      type: "addAccount",
+      account,
+    });
+  };
   // @ts-ignore
   list = (_filter: any) => filter(state.installedAccounts, _filter);
 

@@ -153,7 +153,7 @@ function NewAccount(props: NewAccountProps) {
           displayEmpty
         >
           {Object.keys(wallets).map(wallet => (
-            <MenuItem value={wallet} selected={wallet === form.wallettype}>{wallet}</MenuItem>
+            <MenuItem key={wallet} value={wallet} selected={wallet === form.wallettype}>{wallet}</MenuItem>
           ))}
         </Select>
       </FormControl>
@@ -173,7 +173,7 @@ function NewAccount(props: NewAccountProps) {
           displayEmpty
         >
           {Object.keys(networks).map(network => (
-            <MenuItem value={network} selected={network === form.network}>{network}</MenuItem>
+            <MenuItem key={network} value={network} selected={network === form.network}>{network}</MenuItem>
           ))}
         </Select>
       </FormControl>
@@ -194,7 +194,7 @@ function NewAccount(props: NewAccountProps) {
         >
           <MenuItem value={""} selected={"" === form.derivationMode}></MenuItem>
           {Object.values(derivationModes).map(derivationMode => (
-            <MenuItem value={derivationMode} selected={derivationMode === form.derivationMode}>{derivationMode}</MenuItem>
+            <MenuItem key={derivationMode} value={derivationMode} selected={derivationMode === form.derivationMode}>{derivationMode}</MenuItem>
           ))}
         </Select>
         <FormHelperText>If you leave blank it will be selected based on the path. Only useful to set it to recover mistakes.</FormHelperText>

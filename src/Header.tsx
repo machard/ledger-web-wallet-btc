@@ -7,7 +7,7 @@ import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { context } from "./providers/accounts";
+import { context, syncAccount } from "./providers/accounts";
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 
 const lightColor = 'rgba(255, 255, 255, 0.7)';
@@ -45,6 +45,10 @@ function Header(props: HeaderProps) {
   const { classes, categories, category, setCategory } = props;
   const { installedAccounts } = useContext(context);
 
+  const syncAll = () => {
+    installedAccounts.forEach(account => syncAccount(account.id));
+  }
+
   return (
     <React.Fragment>
       <AppBar
@@ -62,7 +66,10 @@ function Header(props: HeaderProps) {
               </Typography>
             </Grid>
             <Grid item>
-              <IconButton color="inherit">
+              <IconButton
+                color="inherit"
+                onClick={syncAll}
+              >
                 <SyncIcon />
               </IconButton>
             </Grid>
