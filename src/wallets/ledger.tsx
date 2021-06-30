@@ -52,7 +52,7 @@ class WalletLedger implements Wallet {
       dest,
       amount,
       fee,
-      changeAddress
+      changeAddress.address
     );
     
     const length = txinfos.outputs.reduce((sum, output) => {
@@ -84,7 +84,8 @@ class WalletLedger implements Wallet {
       // @ts-ignore
       inputs,
       associatedKeysets,
-      outputScriptHex
+      outputScriptHex,
+      changePath: `${fromAccount.path}/${fromAccount.index}'/${changeAddress.account}/${changeAddress.index}`
     });
 
     const tx = await btc.createPaymentTransactionNew({

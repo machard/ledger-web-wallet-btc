@@ -19,7 +19,7 @@ function Accounts(props: AccountsProps) {
 
   return (
     <Paper className={classes.paper}>
-      Pendings
+      Manage your nano app
     </Paper>
   );
 }

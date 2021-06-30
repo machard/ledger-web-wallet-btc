@@ -32,34 +32,40 @@ function Accounts(props: AccountsProps) {
     });
 
   const fromAccount = installedAccounts.find(account => account.id === form.from);
+  const toAccount = installedAccounts.find(account => account.id === form.to);
 
   const send = async() => {
     if (
       !form.from ||
       !form.to ||
       !form.amount ||
-      !fromAccount
+      !form.fee
     ) {
       return;
     }
 
-    let dest = form.to;
+    let dest: string = form.to;
     if (form.totype === "account") {
-      const account = installedAccounts.find(account => account.id === form.to)
-      dest = await account?.xpubobj.getNewAddress(0, 1);
+      if (!toAccount) {
+        return alert("to account inexsitant");
+      }
+      dest = (await toAccount.xpubobj.getNewAddress(0, 1)).address;
+    }
+
+    if (!fromAccount) {
+      return alert("from account inexsitant");
     }
 
     let tx: string;
     try {
       const wallet: Wallet = wallets[fromAccount.wallettype];
-      tx = await wallet.send(btc, fromAccount, dest, parseInt(form.amount, 10), 500);
+      tx = await wallet.send(btc, fromAccount, dest, parseInt(form.amount, 10), parseInt(form.fee, 10));
 
       const res = await fromAccount.xpubobj.broadcastTx(tx);
 
       console.log(res);
       alert("tx sent");
     } catch(e) {
-      throw e;
       alert("send error" + JSON.stringify(e));
     }
   }
@@ -76,6 +82,13 @@ function Accounts(props: AccountsProps) {
         label="Amount in sats"
         required
         value={form.amount || ""}
+        onChange={onChange}
+      />
+      <TextField
+        id="fee"
+        label="Fee in sats"
+        required
+        value={form.fee || ""}
         onChange={onChange}
       />
       <FormControl className={classes.formControl}>

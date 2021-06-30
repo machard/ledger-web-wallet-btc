@@ -95,7 +95,11 @@ function NewAccount(props: NewAccountProps) {
     account.xpub = xpub;
     account.owner = "ledger-web-wallet-btc";
 
-    addAccount(account);
+    try {
+      addAccount(account);
+    } catch(e) {
+      return alert(e);
+    }
 
     dispatch({
       name: "",

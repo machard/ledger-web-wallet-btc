@@ -40,7 +40,7 @@ function Accounts(props: AccountsProps) {
   const { installedAccounts } = useContext(context);
 
   const copyNewAddressInClipboard = async (account: Account) => {
-    const address = await account.xpubobj.getNewAddress(0, 1);
+    const { address } = await account.xpubobj.getNewAddress(0, 1);
     navigator.clipboard.writeText(address);
   }
 

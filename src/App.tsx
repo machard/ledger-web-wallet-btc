@@ -8,7 +8,7 @@ import {
 import Accounts from './Accounts';
 import NewAccount from './NewAccount';
 import Send from './Send';
-import Pendings from './Pendings';
+import NanoApp from './NanoApp';
 import Header from './Header';
 
 const styles = (theme: Theme) => createStyles({
@@ -25,14 +25,14 @@ const categories = [
   "Add Accounts",
   "Accounts",
   "Send",
-  "Pendings",
+  "Nano app",
 ]
 
 const pagesMap = {
   "Add Accounts": NewAccount,
   "Accounts": Accounts,
   "Send": Send,
-  "Pendings": Pendings,
+  "Nano app": NanoApp,
 }
 
 export interface PaperbaseProps extends WithStyles<typeof styles> {}

@@ -214,6 +214,10 @@ const AccountsProvider = ({
     localStorage.removeItem(txskey(id))
   }
   addAccount = (account: any) => {
+    const hasAccount = find(state.installedAccounts, iAccount => iAccount.id === makeId(account));
+    if (hasAccount) {
+      throw new Error("This account already exists");
+    }
     dispatch({
       type: "addAccount",
       account,
