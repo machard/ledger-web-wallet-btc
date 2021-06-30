@@ -155,7 +155,7 @@ const AccountsProvider = ({
         return {
           ...state,
           installedAccounts: state.installedAccounts.map(account =>
-            omit(account, "xpubobj")
+            omit(account, ["xpubobj"])
           ),
         }
       },
@@ -171,7 +171,7 @@ const AccountsProvider = ({
             } catch(e) {}
             
             return ({
-              ...account,
+              ...omit(account, ["syncing"]),
               xpubobj
             })
           }),

@@ -12083,9 +12083,9 @@ xmlchars@^2.2.0:
   resolved "https://registry.yarnpkg.com/xmlchars/-/xmlchars-2.2.0.tgz#060fe1bcb7f9c76fe2a17db86a9bc3ab894210cb"
   integrity sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==
 
-xpub.js@ledgerhq/xpub.js#ea4d6ff:
+xpub.js@ledgerhq/xpub.js#5e399bb:
   version "1.0.0"
-  resolved "https://codeload.github.com/ledgerhq/xpub.js/tar.gz/ea4d6ff30dea44b6494b6163dab439cb852d0808"
+  resolved "https://codeload.github.com/ledgerhq/xpub.js/tar.gz/5e399bb234665e4c2b164e1020c534267a270c1d"
   dependencies:
     "@types/bchaddrjs" "^0.4.0"
     "@types/bitcore-lib-cash" "^8.23.3"
