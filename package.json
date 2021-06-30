@@ -29,7 +29,7 @@
     "sha.js": "^2.4.11",
     "typescript": "^4.3.4",
     "web-vitals": "^1.0.1",
-    "xpub.js": "ledgerhq/xpub.js"
+    "xpub.js": "ledgerhq/xpub.js#30-06-21"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -56,6 +56,7 @@
     ]
   },
   "devDependencies": {
+    "@types/bitcoinjs-lib": "^5.0.0",
     "@types/bs58": "^4.0.1",
     "@types/lodash": "^4.14.170",
     "@types/ripemd160": "^2.0.0",

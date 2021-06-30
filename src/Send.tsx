@@ -3,6 +3,8 @@ import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Box, Button, Divider, FormControl, FormControlLabel, FormHelperText, FormLabel, InputLabel, MenuItem, Radio, RadioGroup, Select, TextField, Typography } from '@material-ui/core';
 import { context } from './providers/accounts';
+import btc from "./btc";
+import wallets, { Wallet } from "./wallets";
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -35,36 +37,31 @@ function Accounts(props: AccountsProps) {
     if (
       !form.from ||
       !form.to ||
-      !form.amount
+      !form.amount ||
+      !fromAccount
     ) {
       return;
     }
-    
+
     let dest = form.to;
     if (form.totype === "account") {
       const account = installedAccounts.find(account => account.id === form.to)
       dest = await account?.xpubobj.getNewAddress(0, 1);
     }
 
-    let psbt;
+    let tx: string;
     try {
-      // @ts-ignore fromAccount is defined
-      psbt = await fromAccount.xpubobj.buildTx(
-        {
-          account: 1,
-          gap: 1,
-        },
-        dest,
-        parseInt(form.amount, 10),
-        500
-      );
+      const wallet: Wallet = wallets[fromAccount.wallettype];
+      tx = await wallet.send(btc, fromAccount, dest, parseInt(form.amount, 10), 500);
+
+      const res = await fromAccount.xpubobj.broadcastTx(tx);
+
+      console.log(res);
+      alert("tx sent");
     } catch(e) {
       throw e;
-      return alert(e);
+      alert("send error" + JSON.stringify(e));
     }
-    
-    console.log(psbt);
-    alert("check the tx in logs");
   }
 
   return (

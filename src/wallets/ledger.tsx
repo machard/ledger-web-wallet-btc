@@ -1,73 +1,13 @@
 import * as bitcoin from "bitcoinjs-lib";
-import Btc, { AddressFormat } from "@ledgerhq/hw-app-btc";
-import bs58 from "bs58";
-import { padStart } from "lodash";
+import Btc from "@ledgerhq/hw-app-btc";
+// @ts-ignore
+import { BufferWriter } from "bitcoinjs-lib/src/bufferutils";
+import { Account } from "../providers/accounts";
+import { Transaction } from "@ledgerhq/hw-app-btc/lib/types";
+import { Wallet } from "./index";
+import * as utils from "./utils";
 
-function parseHexString(str: any) {
-  var result = [];
-  while (str.length >= 2) {
-    result.push(parseInt(str.substring(0, 2), 16));
-    str = str.substring(2, str.length);
-  }
-  return result;
-}
-
-function encodeBase58Check(vchIn: any) {
-  vchIn = parseHexString(vchIn);
-  var chksum = bitcoin.crypto.sha256(vchIn);
-  chksum = bitcoin.crypto.sha256(chksum);
-  chksum = chksum.slice(0, 4);
-  var hash = vchIn.concat(Array.from(chksum));
-  return bs58.encode(hash);
-}
-
-function toHexDigit(number: any) {
-  var digits = "0123456789abcdef";
-  return digits.charAt(number >> 4) + digits.charAt(number & 0x0f);
-}
-
-function toHexInt(number: any) {
-  return (
-    toHexDigit((number >> 24) & 0xff) +
-    toHexDigit((number >> 16) & 0xff) +
-    toHexDigit((number >> 8) & 0xff) +
-    toHexDigit(number & 0xff)
-  );
-}
-
-function compressPublicKey(publicKey: any) {
-  var compressedKeyIndex;
-  if (publicKey.substring(0, 2) !== "04") {
-    throw "Invalid public key format";
-  }
-  if (parseInt(publicKey.substring(128, 130), 16) % 2 !== 0) {
-    compressedKeyIndex = "03";
-  } else {
-    compressedKeyIndex = "02";
-  }
-  var result = compressedKeyIndex + publicKey.substring(2, 66);
-  return result;
-}
-
-
-function createXPUB(
-  depth: any,
-  fingerprint: any,
-  childnum: any,
-  chaincode: any,
-  publicKey: any,
-  network: any
-) {
-  var xpub = toHexInt(network);
-  xpub = xpub + padStart(depth.toString(16), 2, "0");
-  xpub = xpub + padStart(fingerprint.toString(16), 8, "0");
-  xpub = xpub + padStart(childnum.toString(16), 8, "0");
-  xpub = xpub + chaincode;
-  xpub = xpub + publicKey;
-  return xpub;
-}
-
-class WalletLedger {
+class WalletLedger implements Wallet {
   async getXpub(btc: Btc, params: {
       path: string;
       index: string;
@@ -78,8 +18,8 @@ class WalletLedger {
     const accountDerivation = await btc.getWalletPublicKey(`${params.path}/${params.index}'`);
     
     // parent
-    const publicKeyParentCompressed = compressPublicKey(parentDerivation.publicKey);
-    const publicKeyParentCompressedHex = parseHexString(publicKeyParentCompressed);
+    const publicKeyParentCompressed = utils.compressPublicKey(parentDerivation.publicKey);
+    const publicKeyParentCompressedHex = utils.parseHexString(publicKeyParentCompressed);
     var result = bitcoin.crypto.sha256(Buffer.from(publicKeyParentCompressedHex));
     result = bitcoin.crypto.ripemd160(result);
     var fingerprint =
@@ -87,12 +27,12 @@ class WalletLedger {
       0;
 
     // account
-    const publicKeyAccountCompressed = compressPublicKey(accountDerivation.publicKey);
+    const publicKeyAccountCompressed = utils.compressPublicKey(accountDerivation.publicKey);
     var childnum = (0x80000000 | parseInt(params.index, 10)) >>> 0;
 
     console.log("netxork", params.network);
 
-    var xpub = createXPUB(
+    var xpub = utils.createXPUB(
       3,
       fingerprint,
       childnum,
@@ -101,7 +41,60 @@ class WalletLedger {
       params.network.bip32.public
     );
 
-    return encodeBase58Check(xpub);
+    return utils.encodeBase58Check(xpub);
+  }
+
+  async send(btc: Btc, fromAccount: Account, dest: string, amount: number, fee: number) {
+    
+    const changeAddress = await fromAccount.xpubobj.getNewAddress(1, 1);
+    let txinfos;
+    txinfos = await fromAccount.xpubobj.buildTx(
+      dest,
+      amount,
+      fee,
+      changeAddress
+    );
+    
+    const length = txinfos.outputs.reduce((sum, output) => {
+      return sum + 8 + output.script.length + 1;
+    }, 1)
+    const buffer = Buffer.allocUnsafe(length);
+    const bufferWriter = new BufferWriter(
+      buffer,
+      0,
+    );
+    bufferWriter.writeVarInt(txinfos.outputs.length);
+    txinfos.outputs.forEach(txOut => {
+      bufferWriter.writeUInt64(txOut.value);
+      bufferWriter.writeVarSlice(txOut.script);
+    });
+    const outputScriptHex = buffer.toString("hex");
+
+    // @ts-ignore fromAccount is defined
+    const associatedKeysets = txinfos.associatedDerivations.map(
+      ([account, index]) =>
+      `${fromAccount.path}/${fromAccount.index}'/${account}/${index}`
+    );
+    type Inputs = [Transaction, number, string | null | undefined, number | null | undefined][];
+    const inputs: Inputs =txinfos.inputs.map(([txHex, index]) => ([
+      btc.splitTransaction(txHex, true), index, null, null
+    ]));
+
+    console.log("call hw-app-btc", {
+      // @ts-ignore
+      inputs,
+      associatedKeysets,
+      outputScriptHex
+    });
+
+    const tx = await btc.createPaymentTransactionNew({
+      inputs,
+      associatedKeysets,
+      outputScriptHex,
+      additionals: []
+    });
+
+    return tx;
   }
 }
 

@@ -2,10 +2,12 @@
 import React, { ReactNode } from "react";
 import useReducerWithLocalStorage from "../hooks/useReducerWithLocalStorage";
 import { uniqBy, filter, omit, find } from "lodash";
-import xpubjs from "xpub.js";
+import Xpub from "xpub.js/dist/xpub";
+import LedgerV3Dot2Dot4 from "xpub.js/dist/explorer/ledger.v3.2.4";
+import Bitcoin from "xpub.js/dist/crypto/bitcoin";
+import Mock from "xpub.js/dist/storage/mock";
 // @ts-ignore
 import coininfo from "coininfo";
-import Xpub from "xpub.js/dist/xpub";
 
 export interface Account {
   name: string;
@@ -35,24 +37,25 @@ export let list: (_filter: any) => Account[] = () => [];
 
 const getxpubobj = (account: any) => {
   let network = coininfo.bitcoin.main.toBitcoinJS();
-  let explorer = new xpubjs.explorers.LedgerV3Dot2Dot4({
+  let explorer = new LedgerV3Dot2Dot4({
     explorerURI: "https://explorers.api.vault.ledger.com/blockchain/v3/btc",
   });
 
   if (account.network === "praline") {
     network = coininfo.bitcoin.test.toBitcoinJS();
-    explorer = new xpubjs.explorers.LedgerV3Dot2Dot4({
+    explorer = new LedgerV3Dot2Dot4({
       explorerURI: "http://localhost:20000/blockchain/v3",
       disableBatchSize: true, // https://ledgerhq.atlassian.net/browse/BACK-2191
     });
   }
 
-  const crypto = new xpubjs.crypto.Bitcoin({
+  const crypto = new Bitcoin({
     network,
   });
+  const storage = new Mock();
 
-  return new xpubjs.Xpub({
-    storage: new xpubjs.storages.Mock(),
+  return new Xpub({
+    storage,
     explorer,
     crypto,
     xpub: account.xpub,
