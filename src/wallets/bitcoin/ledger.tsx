@@ -245,14 +245,6 @@ class WalletLedger {
       this.btc.splitTransaction(txHex, true), index, null, null
     ]));
 
-    console.log("call", {
-      inputs,
-      associatedKeysets,
-      outputScriptHex,
-      // changePath: `${fromAccount.params.path}/${fromAccount.params.index}'/${changeAddress.account}/${changeAddress.index}`,
-      additionals: []
-    });
-
     const tx = await this.btc.createPaymentTransactionNew({
       inputs,
       associatedKeysets,
