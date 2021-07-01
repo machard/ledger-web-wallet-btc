@@ -22,14 +22,16 @@
     "ledger-web-client": "machard/ledger-web-client",
     "ledger-web-hw-transport": "machard/ledger-web-hw-transport",
     "lodash": "^4.17.21",
+    "node-libs-browser": "^2.2.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
     "ripemd160": "^2.0.2",
     "sha.js": "^2.4.11",
     "typescript": "^4.3.4",
+    "wallets.js": "ledgerhq/wallets.js#bcd5f7c",
     "web-vitals": "^1.0.1",
-    "xpub.js": "ledgerhq/xpub.js#a4980b7"
+    "xpub.js": "ledgerhq/xpub.js#ec6d329"
   },
   "scripts": {
     "start": "react-scripts start",

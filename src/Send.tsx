@@ -68,6 +68,7 @@ function Accounts(props: AccountsProps) {
         parseInt(form.fee, 10)
       );
     } catch(e) {
+      console.log(e);
       return alert("build tx error" + JSON.stringify(e));
     }
 

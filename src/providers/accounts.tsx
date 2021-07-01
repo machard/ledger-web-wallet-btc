@@ -2,8 +2,10 @@
 import React, { ReactNode } from "react";
 import useReducerWithLocalStorage from "../hooks/useReducerWithLocalStorage";
 import { uniqBy, find } from "lodash";
-import { Account as WalletAccount } from "../wallets/bitcoin/ledger";
-import { SerializedAccount as WalletSerializedAccount } from "../wallets/bitcoin/ledger";
+import {
+  Account as WalletAccount,
+  SerializedAccount as WalletSerializedAccount
+} from "wallets.js/dist/ledger";
 // @ts-ignore
 import wallet from "../wallet";
 
