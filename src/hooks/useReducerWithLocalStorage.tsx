@@ -7,7 +7,8 @@ const load = async (key: string, onLoaded: Function, setLoaded: Function, onload
   try {
     const item = window.localStorage.getItem(key);
     if (!item) {
-      return;
+      console.log("loaded");
+      return setLoaded(true);
     }
     const stored = JSON.parse(item);
     const value = await onload(stored);
