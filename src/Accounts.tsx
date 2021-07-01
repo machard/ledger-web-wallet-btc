@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { context, removeAccount, syncAccount, Account } from "./providers/accounts";
 import { Button, Card, CardActions, CardContent, Typography } from '@material-ui/core';
+import wallet from "./wallet";
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -40,7 +41,7 @@ function Accounts(props: AccountsProps) {
   const { installedAccounts } = useContext(context);
 
   const copyNewAddressInClipboard = async (account: Account) => {
-    const { address } = await account.xpubobj.getNewAddress(0, 1);
+    const { address } = await wallet.getAccountNewReceiveAddress(account.walletAccount);
     navigator.clipboard.writeText(address);
   }
 
@@ -59,18 +60,18 @@ function Accounts(props: AccountsProps) {
                 : "Not synced"}
               </Typography>
               <Typography className={classes.pos} color="textSecondary">
-                path: {account.path}
+                path: {account.walletAccount.params.path}
               </Typography>
               <Typography variant="body2" component="p">
-                network: {account.network}
+                network: {account.walletAccount.params.network}
                 <br />
-                wallettype: {account.wallettype}
+                networkbis: {account.walletAccount.params.explorerParams[0]}
                 <br />
-                index: {account.index}
+                index: {account.walletAccount.params.index}
                 <br />
-                derivationMode: {account.derivationMode}
+                derivationMode: {account.walletAccount.params.derivationMode}
                 <br />
-                xpub: {account.xpub}
+                xpub: {account.walletAccount.xpub.xpub}
                 <br />
                 lastSync: {account.lastSync}
               </Typography>
@@ -80,7 +81,7 @@ function Accounts(props: AccountsProps) {
                 size="small"
                 disabled={account.syncing}
                 onClick={async () => {
-                  syncAccount(account.id);
+                  syncAccount(account.walletAccount);
                 }}
               >Sync{account.syncing ? "ing...": ""}</Button>
               <Button
@@ -94,7 +95,7 @@ function Accounts(props: AccountsProps) {
                 color="secondary"
                 size="small"
                 onClick={async () => {
-                  removeAccount(account.id);
+                  removeAccount(account.walletAccount);
                 }}
               >Remove</Button>
             </CardActions>

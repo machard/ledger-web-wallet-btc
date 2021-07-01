@@ -2,9 +2,8 @@ import React, { useReducer, useContext } from 'react';
 import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Box, Button, Divider, FormControl, FormControlLabel, FormHelperText, FormLabel, InputLabel, MenuItem, Radio, RadioGroup, Select, TextField, Typography } from '@material-ui/core';
-import { context } from './providers/accounts';
-import btc from "./btc";
-import wallets, { Wallet } from "./wallets";
+import { context, makeId } from './providers/accounts';
+import wallet from "./wallet";
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -31,8 +30,12 @@ function Accounts(props: AccountsProps) {
       [event.target.id]: event.target.value,
     });
 
-  const fromAccount = installedAccounts.find(account => account.id === form.from);
-  const toAccount = installedAccounts.find(account => account.id === form.to);
+  const fromAccount = installedAccounts.find(account =>
+    makeId(account.walletAccount) === form.from
+  );
+  const toAccount = installedAccounts.find(account =>
+    makeId(account.walletAccount) === form.to
+  );
 
   const send = async() => {
     if (
@@ -49,7 +52,7 @@ function Accounts(props: AccountsProps) {
       if (!toAccount) {
         return alert("to account inexsitant");
       }
-      dest = (await toAccount.xpubobj.getNewAddress(0, 1)).address;
+      dest = (await wallet.getAccountNewChangeAddress(toAccount.walletAccount)).address;
     }
 
     if (!fromAccount) {
@@ -58,15 +61,22 @@ function Accounts(props: AccountsProps) {
 
     let tx: string;
     try {
-      const wallet: Wallet = wallets[fromAccount.wallettype];
-      tx = await wallet.send(btc, fromAccount, dest, parseInt(form.amount, 10), parseInt(form.fee, 10));
-
-      const res = await fromAccount.xpubobj.broadcastTx(tx);
-
-      console.log(res);
-      alert("tx sent");
+      tx = await wallet.buildAccountTx(
+        fromAccount.walletAccount,
+        dest,
+        parseInt(form.amount, 10),
+        parseInt(form.fee, 10)
+      );
     } catch(e) {
-      alert("send error" + JSON.stringify(e));
+      return alert("build tx error" + JSON.stringify(e));
+    }
+
+    try {
+      const res = await wallet.broadcastTx(fromAccount.walletAccount, tx);
+
+      alert("tx sent" + res);
+    } catch(e) {
+      return alert("send error" + JSON.stringify(e));
     }
   }
 
@@ -106,10 +116,12 @@ function Accounts(props: AccountsProps) {
           })}
         >
           {installedAccounts
-            .filter(account => account.balance > 0)
+            .filter(account => account.balance && account.balance > 0)
             .map(account => (
-              <MenuItem value={account.id} selected={account.id === form.from}>
-                {account.name} ({ account.balance } sats, {account.network})
+              <MenuItem
+                value={makeId(account.walletAccount)}
+              >
+                {account.name} ({ account.balance } sats, {account.walletAccount.params.network}, {account.walletAccount.params.explorerParams[0]})
               </MenuItem>
             ))
           }
@@ -144,7 +156,9 @@ function Accounts(props: AccountsProps) {
       </FormControl>
       {form.totype === "account"  && fromAccount ? (
         <FormControl className={classes.formControl}>
-          <InputLabel id="to-label">Send Destination account ({fromAccount.network})</InputLabel>
+          <InputLabel id="to-label">
+            Send Destination account ({fromAccount.walletAccount.params.network}, {fromAccount.walletAccount.params.explorerParams[0]})
+          </InputLabel>
           <Select
             labelId="to-label"
             id="to"
@@ -158,10 +172,13 @@ function Accounts(props: AccountsProps) {
             })}
           >
             {installedAccounts
-              .filter(account => account.network === fromAccount.network)
+              .filter(account =>
+                account.walletAccount.params.network === fromAccount.walletAccount.params.network &&
+                account.walletAccount.params.explorerParams[0] === fromAccount.walletAccount.params.explorerParams[0]
+              )
               .map(account => (
-                <MenuItem value={account.id}>
-                  {account.name} ({ account.balance } sats, {account.network})
+                <MenuItem value={makeId(account.walletAccount)}>
+                  {account.name} ({ account.balance } sats)
                 </MenuItem>
               ))
             }
@@ -171,7 +188,7 @@ function Accounts(props: AccountsProps) {
       ) : (form.totype === "address" && fromAccount) ? (
         <TextField
           id="to"
-          label={`To Address (${fromAccount.network} network)`}
+          label="To Address"
           required
           value={form.to || ""}
           onChange={onChange}

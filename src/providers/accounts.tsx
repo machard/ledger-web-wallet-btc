@@ -1,28 +1,25 @@
 /* @flow */
 import React, { ReactNode } from "react";
 import useReducerWithLocalStorage from "../hooks/useReducerWithLocalStorage";
-import { uniqBy, filter, omit, find } from "lodash";
-import Xpub from "xpub.js/dist/xpub";
-import LedgerV3Dot2Dot4 from "xpub.js/dist/explorer/ledger.v3.2.4";
-import Bitcoin from "xpub.js/dist/crypto/bitcoin";
-import Mock from "xpub.js/dist/storage/mock";
+import { uniqBy, find } from "lodash";
+import { Account as WalletAccount } from "../wallets/bitcoin/ledger";
+import { SerializedAccount as WalletSerializedAccount } from "../wallets/bitcoin/ledger";
 // @ts-ignore
-import coininfo from "coininfo";
+import wallet from "../wallet";
 
 export interface Account {
-  name: string;
-  path: string;
-  index: string;
-  network: string;
-  wallettype: string;
-  owner: string;
-  derivationMode: string;
-  xpub: string;
-  id: string;
-  xpubobj: Xpub;
+  name: string,
+  walletAccount: WalletAccount;
   syncing: boolean;
-  balance: number;
-  lastSync: string;
+  balance: number | null;
+  lastSync: string | null;
+}
+export interface SerializedAccount {
+  name: string,
+  walletAccount: WalletSerializedAccount;
+  syncing: boolean;
+  balance: number | null;
+  lastSync: string | null;
 }
 
 interface State {
@@ -30,47 +27,16 @@ interface State {
 };
 
 // actions/methods
-export let removeAccount: (id: string) => void = () => {};
-export let addAccount: (account: Account) => void = () => {};
-export let syncAccount: (id: string) => void = () => {};
-export let list: (_filter: any) => Account[] = () => [];
+export let removeAccount: (walletAccount: WalletAccount) => void = () => {};
+export let addAccount: (name: string, walletAccount: WalletAccount) => void = () => {};
+export let syncAccount: (walletAccount: WalletAccount) => void = () => {};
 
-const getxpubobj = (account: any) => {
-  let network = coininfo.bitcoin.main.toBitcoinJS();
-  let explorer = new LedgerV3Dot2Dot4({
-    explorerURI: "https://explorers.api.vault.ledger.com/blockchain/v3/btc",
-  });
-
-  if (account.network === "praline") {
-    network = coininfo.bitcoin.test.toBitcoinJS();
-    explorer = new LedgerV3Dot2Dot4({
-      explorerURI: "http://localhost:20000/blockchain/v3",
-      disableBatchSize: true, // https://ledgerhq.atlassian.net/browse/BACK-2191
-    });
-  }
-
-  const crypto = new Bitcoin({
-    network,
-  });
-  const storage = new Mock();
-
-  return new Xpub({
-    storage,
-    explorer,
-    crypto,
-    xpub: account.xpub,
-    derivationMode: account.derivationMode,
-  })
-}
-
-const makeId = (account: any) => {
+export const makeId = (account: WalletAccount) => {
   return [
-    account.path,
-    account.index,
-    account.network,
-    account.derivationMode,
-    account.wallettype,
-    account.owner
+    account.params.path,
+    account.params.index,
+    account.params.network,
+    account.params.derivationMode,
   ].join("-")
 }
 
@@ -79,14 +45,18 @@ const reducer = (state: State, update: any) => {
   let installedAccounts;
   console.log("accounts reducer", update);
   switch(update.type) {
+    case "init":
+      return update.state;
     case "addAccount":
       installedAccounts = uniqBy(
         state.installedAccounts.concat([{
-          ...update.account,
-          xpubobj: getxpubobj(update.account),
-          id: makeId(update.account)
+          walletAccount: update.walletAccount,
+          syncing: false,
+          balance: null,
+          lastSync: null,
+          name: update.name,
         }]),
-        "id"
+        (account) => makeId(account.walletAccount)
       );
       state = {
         ...state,
@@ -94,7 +64,9 @@ const reducer = (state: State, update: any) => {
       };
       break
     case "removeAccount":
-      installedAccounts = state.installedAccounts.filter(account => account.id !== update.id);
+      installedAccounts = state.installedAccounts.filter(account =>
+        makeId(account.walletAccount) !== makeId(update.walletAccount)
+      );
 
       state = {
         ...state,
@@ -106,7 +78,7 @@ const reducer = (state: State, update: any) => {
       state = {
         ...state,
         installedAccounts: state.installedAccounts.map(account => {
-          if (account.id !== update.id) {
+          if (makeId(account.walletAccount) !== makeId(update.walletAccount)) {
             return account;
           }
           if (update.value) {
@@ -139,7 +111,7 @@ const initialState: State = {
 
 export const context = React.createContext<State>(initialState);
 
-const txskey = (id: string) => `account.${id}.txs`;
+const accountskey = "accounts5";
 
 const AccountsProvider = ({
   children,
@@ -147,84 +119,85 @@ const AccountsProvider = ({
   children: ReactNode,
 }) => {
   const [state, dispatch] = useReducerWithLocalStorage(
-    "accounts3",
+    accountskey,
     reducer,
     initialState,
     {
-      onsave: (state: State) => {
+      onsave: async (state: State) => {
+        const serializedIAccounts = await Promise.all(
+          state.installedAccounts.map(account => (async () => {
+            const walletAccount = await wallet.exportToSerializedAccount(account.walletAccount);
+            return {
+              ...account,
+              walletAccount
+            }
+          })())
+        )
         return {
           ...state,
-          installedAccounts: state.installedAccounts.map(account =>
-            omit(account, ["xpubobj"])
-          ),
+          installedAccounts: serializedIAccounts,
         }
       },
-      onload: (data: any) => {
-        return {
-          ...data,
-          installedAccounts: data.installedAccounts.map((account: any) => {
-            const xpubobj = getxpubobj(account);
-            
-            try {
-              const txs = localStorage.getItem(txskey(account.id)) || "[]";
-              xpubobj.storage.load(JSON.parse(txs));
-            } catch(e) {}
-            
+      onload: async (data: any) => {
+        const installedAccounts = await Promise.all(
+          data.installedAccounts.map((account: SerializedAccount) => (async () => {
+            const walletAccount = await wallet.importFromSerializedAccount(account.walletAccount);
             return ({
-              ...omit(account, ["syncing"]),
-              xpubobj
+              ...account,
+              walletAccount
             })
-          }),
+          })())
+        )
+        return {
+          ...state,
+          installedAccounts,
         }
       }
     }
   );
 
-  syncAccount = async (id: string ) => {
-    const account: Account = find(state.installedAccounts, account => account.id === id);
+  syncAccount = async (walletAccount: WalletAccount ) => {
     dispatch({
       type: "syncing",
       value: true,
-      id,
+      walletAccount,
     });
     let fail, balance;
     try {
-      await account.xpubobj.sync();
-      balance = await account.xpubobj.getXpubBalance();
-      const txs = await account.xpubobj.storage.export();
-      localStorage.setItem(txskey(account.id), JSON.stringify(txs));
+      await wallet.syncAccount(walletAccount);
+      balance = await wallet.getAccountBalance(walletAccount);
     } catch(e) {
-      console.log("sync fail", id, e);
+      console.log("sync fail", walletAccount, e);
       fail = true;
     }
     dispatch({
       type: "syncing",
       value: false,
-      id,
+      walletAccount,
       balance,
       fail
     });
   }
 
-  removeAccount = (id: string) => {
+  removeAccount = (walletAccount: WalletAccount) => {
     dispatch({
       type: "removeAccount",
-      id,
+      walletAccount,
     });
-    localStorage.removeItem(txskey(id))
   }
-  addAccount = (account: any) => {
-    const hasAccount = find(state.installedAccounts, iAccount => iAccount.id === makeId(account));
+  addAccount = (name: string, walletAccount: WalletAccount) => {
+    const hasAccount = find(state.installedAccounts, iAccount =>
+      makeId(iAccount.walletAccount) === makeId(walletAccount)
+    );
     if (hasAccount) {
       throw new Error("This account already exists");
     }
     dispatch({
       type: "addAccount",
-      account,
+      walletAccount,
+      name,
     });
   };
-  // @ts-ignore
-  list = (_filter: any) => filter(state.installedAccounts, _filter);
 
   return <context.Provider value={state}>{children}</context.Provider>;
 };

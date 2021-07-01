@@ -9,8 +9,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import client from "./client";
 import { FormControl, FormHelperText, MenuItem, Select } from '@material-ui/core';
 import { InputLabel } from '@material-ui/core';
-import btc from "./btc";
-import wallets from "./wallets";
+import wallet from "./wallet";
 import networks from "./networks";
 import derivationModes from "./derivationModes";
 import { addAccount } from "./providers/accounts";
@@ -38,7 +37,6 @@ export interface NewAccountProps extends WithStyles<typeof styles> {}
 function NewAccount(props: NewAccountProps) {
   const { classes } = props;
   const [form, dispatch] = useReducer((state: any, u: any) => ({...state, ...u}), {
-    wallettype: Object.keys(wallets)[0],
     network: "mainnet",
     derivationMode: ""
   })
@@ -54,7 +52,6 @@ function NewAccount(props: NewAccountProps) {
       !form.path ||
       !form.index ||
       form.index < 0 ||
-      !form.wallettype ||
       !form.network
     ) {
       return;
@@ -68,35 +65,36 @@ function NewAccount(props: NewAccountProps) {
       derivationMode = derivationModes[type];
     }
 
-    const account = {
-      ...form,
-      // @ts-ignore
-      path: form.path,
-      derivationMode,
+    let network: "mainnet" | "testnet" = "mainnet";
+    let explorerParams: any[] = ["https://explorers.api.vault.ledger.com/blockchain/v3/btc"]
+
+    if (form.network === "praline") {
+      network = "testnet";
+      explorerParams = ["http://localhost:20000/blockchain/v3", true]
     }
 
     await client.request("devices", "requireApp", [{
       name: "Bitcoin"
     }]);
 
-    let xpub;
+    let account;
     try {
-      // @ts-ignore
-      xpub = await wallets[form.wallettype].getXpub(btc, {
+      account = await wallet.generateAccount({
         index: form.index,
         path: form.path,
-        // @ts-ignore
-        network: networks[form.network]
+        network,
+        explorerParams,
+        explorer: "ledgerv3",
+        storage: "mock",
+        storageParams: [],
+        derivationMode
       });
     } catch(e) {
       return alert(e);
     }
 
-    account.xpub = xpub;
-    account.owner = "ledger-web-wallet-btc";
-
     try {
-      addAccount(account);
+      addAccount(form.name, account);
     } catch(e) {
       return alert(e);
     }
@@ -141,26 +139,6 @@ function NewAccount(props: NewAccountProps) {
         onChange={onChange}
         required
       />
-      <FormControl className={classes.formControl}>
-        <InputLabel id="wallettypelabel">Base derivation method</InputLabel>
-        <Select
-          labelId="wallettypelabel"
-          id="wallettype"
-          value={form.wallettype}
-          // @ts-ignore
-          onChange={(event: { target: { value: string; }; }) => onChange({
-            target: {
-              id: "wallettype",
-              value: event.target.value
-            }
-          })}
-          displayEmpty
-        >
-          {Object.keys(wallets).map(wallet => (
-            <MenuItem key={wallet} value={wallet} selected={wallet === form.wallettype}>{wallet}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
       <FormControl className={classes.formControl}>
         <InputLabel id="networklabel">Network</InputLabel>
         <Select

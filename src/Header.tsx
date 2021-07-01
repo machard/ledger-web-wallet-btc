@@ -46,7 +46,7 @@ function Header(props: HeaderProps) {
   const { installedAccounts } = useContext(context);
 
   const syncAll = () => {
-    installedAccounts.forEach(account => syncAccount(account.id));
+    installedAccounts.forEach(account => syncAccount(account.walletAccount));
   }
 
   return (
