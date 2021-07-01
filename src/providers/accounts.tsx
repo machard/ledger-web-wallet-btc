@@ -5,7 +5,7 @@ import { uniqBy, find } from "lodash";
 import {
   Account as WalletAccount,
   SerializedAccount as WalletSerializedAccount
-} from "wallets.js/dist/ledger";
+} from "wallet-btc";
 // @ts-ignore
 import wallet from "../wallet";
 

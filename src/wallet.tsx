@@ -1,4 +1,4 @@
 import btc from "./btc";
-import WalletLedger from "wallets.js/dist/ledger";
+import WalletLedger from "wallet-btc";
 
 export default new WalletLedger(btc);
