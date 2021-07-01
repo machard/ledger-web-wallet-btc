@@ -15,6 +15,7 @@ const load = async (key: string, onLoaded: Function, setLoaded: Function, onload
     setLoaded(true);
     console.log("loaded");
   } catch(e) {
+    setLoaded(true);
     console.log("load error", e);
   }
 }
