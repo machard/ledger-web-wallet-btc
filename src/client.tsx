@@ -1,8 +1,14 @@
 import { WindowPostMessageStream } from '@metamask/post-message-stream';
 import LWClient from "ledger-web-client";
 
+let name = "https://ledger-web-wallet-btc.vercel.app/";
+
+if (process.env.NODE_ENV === "development") {
+  name = "http://localhost:3002"
+}
+
 export default new LWClient(new WindowPostMessageStream({
-  name: 'ledger-web-app',
+  name,
   target: 'ledger-web-parent',
   // todo when updating: https://github.com/MetaMask/post-message-stream/pull/23
     // targetOrigin: "*",
