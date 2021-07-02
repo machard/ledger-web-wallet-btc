@@ -73,9 +73,13 @@ function NewAccount(props: NewAccountProps) {
       explorerParams = ["http://localhost:20000/blockchain/v3", true]
     }
 
-    await client.request("devices", "requireApp", [{
-      name: "Bitcoin"
-    }]);
+    try {
+      await client.request("devices", "requireApp", [{
+        name: "Bitcoin"
+      }]);
+    } catch(e) {
+      return alert("app not accessible");
+    }
 
     let account;
     try {
@@ -90,13 +94,14 @@ function NewAccount(props: NewAccountProps) {
         derivationMode
       });
     } catch(e) {
-      return alert(e);
+      console.log(e);
+      return alert("generate account error: is your device sleeping ?");
     }
 
     try {
       addAccount(form.name, account);
     } catch(e) {
-      return alert(e);
+      return alert("add error " + JSON.stringify(e));
     }
 
     dispatch({

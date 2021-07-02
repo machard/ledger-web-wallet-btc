@@ -4,6 +4,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import { Box, Button, Divider, FormControl, FormControlLabel, FormHelperText, FormLabel, InputLabel, MenuItem, Radio, RadioGroup, Select, TextField, Typography } from '@material-ui/core';
 import { context, makeId } from './providers/accounts';
 import wallet from "./wallet";
+import client from './client';
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -59,6 +60,16 @@ function Accounts(props: AccountsProps) {
       return alert("from account inexsitant");
     }
 
+    try {
+      await client.request("devices", "requireApp", [{
+        name: "Bitcoin"
+      }]);
+    } catch(e) {
+      return alert("app not accessible");
+    }
+
+    await client.request("devices", "requireDeviceActionStart", [{}]);
+
     let tx: string;
     try {
       tx = await wallet.buildAccountTx(
@@ -68,9 +79,14 @@ function Accounts(props: AccountsProps) {
         parseInt(form.fee, 10)
       );
     } catch(e) {
+      await client.request("devices", "requireDeviceActionEnd", [{}]);
       console.log(e);
-      return alert("build tx error" + JSON.stringify(e));
+      // TODO : when ledger-web-hw-transport relay correctly the error, display correct
+      // message
+      return alert("build tx error : did you reject or is your device sleeping ?");
     }
+
+    await client.request("devices", "requireDeviceActionEnd", [{}]);
 
     try {
       const res = await wallet.broadcastTx(fromAccount.walletAccount, tx);
