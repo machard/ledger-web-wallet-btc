@@ -7349,22 +7349,24 @@ last-call-webpack-plugin@^3.0.0:
     lodash "^4.17.5"
     webpack-sources "^1.1.0"
 
-ledger-web-client@machard/ledger-web-client:
+ledger-web-client@1.0.0:
   version "1.0.0"
-  resolved "https://codeload.github.com/machard/ledger-web-client/tar.gz/c4cb4d218b1d02647479a24476304e13717f0790"
+  resolved "https://registry.yarnpkg.com/ledger-web-client/-/ledger-web-client-1.0.0.tgz#0494803922bfb30b469759e5094aaf605f2e4e8c"
+  integrity sha512-RQ8QwA9+8ux1hj5dub+YuokBEBD5pMltPGC2olatXyLx+8dKLMM7yEqFAweYmc55CJmeBkNaTGOi59NK33DaPw==
   dependencies:
     "@metamask/post-message-stream" "^4.0.0"
     "@types/readable-stream" "^2.3.10"
     uuid "^8.3.2"
 
-ledger-web-hw-transport@machard/ledger-web-hw-transport:
+ledger-web-hw-transport@1.0.0:
   version "1.0.0"
-  resolved "https://codeload.github.com/machard/ledger-web-hw-transport/tar.gz/2766ad085062b4c26cb1630350e03512d319307a"
+  resolved "https://registry.yarnpkg.com/ledger-web-hw-transport/-/ledger-web-hw-transport-1.0.0.tgz#4b6fc9295a67ff407ec8598f88905213abb1b8af"
+  integrity sha512-jNMkNhTVFDJlqKWLkjgsiRfSOSRQW4h2OlFy8nHw2s0DBMRsm8uyOb1Y5JZs/zjqgiPKDfnCC9/jkyGbe6+u+g==
   dependencies:
     "@ledgerhq/hw-transport" "^6.0.2"
     "@metamask/post-message-stream" "^4.0.0"
     "@types/readable-stream" "^2.3.10"
-    ledger-web-client machard/ledger-web-client
+    ledger-web-client "1.0.0"
     uuid "^8.3.2"
 
 leven@^3.1.0:
